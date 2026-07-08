@@ -19,7 +19,9 @@ def load_commands():
     return cmds
 
 def main(argv=None):
-    argv = argv or sys.argv[1:]
+    # treat only None as 'use sys.argv'; allow empty list to mean no args
+    if argv is None:
+        argv = sys.argv[1:]
     parser = argparse.ArgumentParser(prog='blanklet', description='Blanklet CLI')
     parser.add_argument('command', nargs='?', help='Command to run')
     parser.add_argument('args', nargs=argparse.REMAINDER)
