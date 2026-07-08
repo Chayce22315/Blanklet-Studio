@@ -19,28 +19,34 @@ def load_commands():
     return cmds
 
 def main(argv=None):
-    # treat only None as 'use sys.argv'; allow empty list to mean no args
+    # None => use sys.argv[1:], empty list => test harness invocation with no args
     if argv is None:
         argv = sys.argv[1:]
-    parser = argparse.ArgumentParser(prog='blanklet', description='Blanklet CLI')
-    parser.add_argument('command', nargs='?', help='Command to run')
-    parser.add_argument('args', nargs=argparse.REMAINDER)
-    parsed = parser.parse_args(argv[:1])
-    cmds = load_commands()
-    if not parsed.command or parsed.command in ('-h','help'):
+    # If no args provided, show help
+    if not argv:
+        cmds = load_commands()
         print('Available commands:')
         for k in sorted(cmds):
             desc = getattr(cmds[k], 'DESCRIPTION', '')
             print(f'  {k:12} {desc}')
         return 0
-    cmd = cmds.get(parsed.command)
+    # First arg is the command; rest are passed to command module
+    cmd_name = argv[0]
+    cmd_args = argv[1:]
+    cmds = load_commands()
+    if cmd_name in ('-h','help'):
+        print('Available commands:')
+        for k in sorted(cmds):
+            desc = getattr(cmds[k], 'DESCRIPTION', '')
+            print(f'  {k:12} {desc}')
+        return 0
+    cmd = cmds.get(cmd_name)
     if not cmd:
-        print(f'Unknown command: {parsed.command}', file=sys.stderr)
+        print(f'Unknown command: {cmd_name}', file=sys.stderr)
         return 2
     try:
-        return cmd.run(parsed.args)
+        return cmd.run(cmd_args)
     except SystemExit as e:
-        # allow commands to call sys.exit(code)
         return e.code if isinstance(e.code, int) else 1
     except Exception as e:
         print(f'Error: {e}', file=sys.stderr)
